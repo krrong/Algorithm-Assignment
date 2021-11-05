@@ -49,6 +49,16 @@ public:
 		}
 	}
 
+	// 노드 색 변경
+	void colorChange() {
+		if (this->color == RED) {
+			this->color = BLACK;
+		}
+		else {
+			this->color = RED;
+		}
+	}
+
 	friend class RedBlackTree;
 };
 
@@ -64,12 +74,12 @@ public:
 	// 검색
 	Node* search(int input_id) {
 		Node* curNode = root;
-		int depth = -1;			// 깊이
+		//int depth = -1;			// 깊이
 		while (curNode != NULL) {
-			depth++;
+			//depth++;
 			// 현재 노드의 id와 찾는 id가 같을 경우
 			if (curNode->id == input_id) {
-				cout << depth << ' ';
+				//cout << depth << ' ';
 				return curNode;
 			}
 			// 현재 노드의 id보다 찾는 id가 클 경우 -> 오른쪽으로 이동
@@ -85,19 +95,23 @@ public:
 		return NULL;
 	}
 
-	int insert(Node* node) {
+	void insert(Node* node) {
 		// 트리가 비어있다면
 		if (root == NULL) {
 			root = node;
-			return 0;
+
+			// 루트면 노드 색 -> black
+			node->color = BLACK;
+			//return 0;
+			return;
 		}
 		
 		Node* parNode = NULL;
 		Node* curNode = root;
-		int depth = 0;
+		//int depth = 0;
 
 		while (curNode != NULL) {
-			depth++;
+			//depth++;
 			// 새로 입력하는 id가 더 큰 경우
 			if (curNode->id < node->id) {
 				parNode = curNode;
@@ -116,7 +130,9 @@ public:
 		else if (parNode->id < node->id) {
 			parNode->setRight(node);
 		}
-		return depth;
+
+		//return depth;
+		return;
 	}
 
 	void update(int id, string name, int file_size, int price) {
@@ -132,11 +148,56 @@ public:
 			node->file_size = file_size;
 			node->price = price;
 		}
-		cout << '\n';
 	}
 
 	void discount(int x, int y, int p) {
 
+	}
+
+	void reColoring(Node* child, Node* parent) {
+		Node* grandParent = parent->parent;
+		Node* sibling = NULL;
+
+		if (grandParent->right_child == parent) {
+			sibling = grandParent->left_child;
+		}
+		else {
+			sibling = grandParent->right_child;
+		}
+
+		// 조부모, 부모, 삼촌 색 변경
+		grandParent->colorChange();
+		parent->colorChange();
+		sibling->colorChange();
+
+		// 조부모가 루트면 다시 black으로 변경
+		if (grandParent == root) {
+			grandParent->colorChange();
+		}
+	}
+
+	void reStructuring(Node* child, Node* parent) {
+		Node* grandParent = parent->parent;
+
+	}
+
+	// 깊이 찾는 함수
+	int findDepth(int id) {
+		Node* curNode = root;
+		int depth = -1;
+
+		while (curNode != NULL) {
+			depth++;
+			if (curNode->id == id) {
+				return depth;
+			}
+			else if (curNode->id < id) {
+				curNode = curNode->right_child;
+			}
+			else {
+				curNode = curNode->left_child;
+			}
+		}
 	}
 };
 
@@ -152,7 +213,7 @@ int main() {
 	cin >> t;
 	while (t--) {
 		cin >> query;
-		// 등록 (insert)
+		// 등록 (insert) -> while(doublered) -> 시블링 확인, 리컬러링, 리스트럭처링
 		if (query == "I") {
 			cin >> id >> name >> file_size >> price;
 			Node* newNode = new Node(id, name, file_size, price);
@@ -161,9 +222,12 @@ int main() {
 			
 			// 없을 경우 추가
 			if (node == NULL) {
-				cout << tree.insert(newNode);
+				tree.insert(newNode);
 			}
-			cout << '\n';
+
+			// 없을 경우 추가하고 depth출력, 있을 경우 depth만 출력
+			cout << tree.findDepth(id) << '\n';
+
 		}
 		// 검색 (search)
 		else if (query == "F") {
@@ -174,13 +238,15 @@ int main() {
 				cout << "NULL" << '\n';
 			}
 			else {
-				cout << node->name << ' ' << node->file_size << ' ' << node->price << '\n';
+				cout << tree.findDepth(id) << ' ' << node->name << ' ' << node->file_size << ' ' << node->price << '\n';
 			}
 		}
 		// 업데이트 (update)
 		else if (query == "R") {
 			cin >> id >> name >> file_size >> price;
 			tree.update(id, name, file_size, price);
+
+			cout << tree.findDepth(id) << '\n';
 		}
 		// 할인 (discount)
 		else if (query == "D") {
