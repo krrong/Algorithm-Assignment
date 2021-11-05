@@ -178,10 +178,54 @@ public:
 
 	void reStructuring(Node* child, Node* parent) {
 		Node* grandParent = parent->parent;
+		Node* tmp;
+		vector<Node*> v;
+		v.push_back(grandParent);
+		v.push_back(parent);
+		v.push_back(child);
 
+		// id 오름차순 정렬
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 2; j++) {
+				if (v[j]->id > v[j + 1]->id) {
+					Node* tmp = v[j + 1];
+					v[j + 1] = v[j];
+					v[j] = tmp;
+				}
+			}
+		}
+
+		// 생김새 파악
+		if (grandParent->left_child == parent) {
+			if (parent->left_child == child) {	//		/'
+												//	   /'
+
+			}
+			else {								//		/'
+												//		\'
+
+			}
+		}
+		else {									//		\'
+			if (parent->left_child == child) {	//		/
+
+			}
+			else {								//		\'
+												//		 \'
+
+			}
+
+		}
+	}
+	// double red check
+	bool checkDoubleRed(Node* node) {
+		if (node->parent->color == RED) {
+			return true;
+		}
+		return false;
 	}
 
-	// 깊이 찾는 함수
+	// depth 리턴
 	int findDepth(int id) {
 		Node* curNode = root;
 		int depth = -1;
@@ -223,6 +267,10 @@ int main() {
 			// 없을 경우 추가
 			if (node == NULL) {
 				tree.insert(newNode);
+
+				// while(doubleRed(), node->parent != NULL)
+				// if 부모의 sibling이 black 이면 리스트럭쳐링 -> return
+				// if 부모의 sibling이 red 이면 리컬러링
 			}
 
 			// 없을 경우 추가하고 depth출력, 있을 경우 depth만 출력
