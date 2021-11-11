@@ -141,7 +141,7 @@ public:
 			parNode->setRight(node);
 		}
 
-		// 추가 후 doublie red 체크하면서 수정
+		// 추가 후 double red 체크하면서 수정
 		reColoring(node);
 		return;
 	}
@@ -163,23 +163,31 @@ public:
 		}
 	}
 
-	void discount(int x, int y, int p) {
-		Node* curNode = root;
-
-		while (curNode != NULL && curNode->id > x) {
-
+	// inorder traversal
+	void discount(Node* node, int x, int y, int p) {
+		if (node == NULL) {
+			return;
 		}
+
+		discount(node->left_child, x, y, p);
+
+		// 범위 안에 존재하면 할인
+		if (node->id >= x && node->id <= y) {
+			node->price = node->price * (100 - p) / 100;
+		}
+
+		discount(node->right_child, x, y, p);
 	}
 
 	void reColoring(Node* node) {
-		// double red 발생할 때마다
+		// double red 체크
 		while (node->parent != NULL && node->parent->color == RED) {
 			Node* sibling = NULL;
 
 			if (node->parent == node->parent->parent->left_child) {
 				sibling = node->parent->parent->right_child;
 
-				// 삼촌이 RED면 리컬러링 -> 문제가 생기면 colorChange를 BLACK으로 직접 바꿔주자.
+				// 삼촌이 RED면 recoloring -> (문제가 생기면 colorChange를 BLACK으로 직접 바꿔주자.)
 				if (sibling != NULL && sibling->color == RED) {
 					node->parent->colorChange();
 					sibling->colorChange();
@@ -204,7 +212,7 @@ public:
 			else {
 				sibling = node->parent->parent->left_child;
 
-				// 리컬러링 -> 지속
+				// 삼촌이 RED면 recoloring -> (문제가 생기면 colorChange를 BLACK으로 직접 바꿔주자.)
 				if (sibling != NULL && sibling->color == RED) {
 					node->parent->colorChange();
 					sibling->colorChange();
@@ -296,14 +304,6 @@ public:
 		}
 	}
 
-	// double red check
-	bool checkDoubleRed(Node* node) {
-		if (node->parent->color == RED) {
-			return true;
-		}
-		return false;
-	}
-
 	// depth 리턴
 	int findDepth(int id) {
 		Node* curNode = root;
@@ -373,7 +373,7 @@ int main() {
 		else if (query == "D") {
 			int x, y, p;
 			cin >> x >> y >> p;
-			tree.discount(x, y, p);
+			tree.discount(tree.root, x, y, p);
 		}
 	}
 	return 0;
