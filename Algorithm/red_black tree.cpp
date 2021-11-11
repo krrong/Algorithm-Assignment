@@ -37,59 +37,28 @@ public:
 		parent = left_child = right_child = NULL;
 	}
 
-	// 왼쪽 자식 설정
-	void setLeft(Node* node) {
-		if (node == NULL) {
-			this->left_child = NULL;
-		}
-		else {
-			this->left_child = node;
-			node->parent = this;
-		}
-	}
-
-	// 오른쪽 자식 설정
-	void setRight(Node* node) {
-		if (node == NULL) {
-			this->right_child = NULL;
-		}
-		else {
-			this->right_child = node;
-			node->parent = this;
-		}
-	}
-
-	// 노드 색 변경
-	void colorChange() {
-		if (this->color == RED) {
-			this->color = BLACK;
-		}
-		else {
-			this->color = RED;
-		}
-	}
-
 	friend class RedBlackTree;
 };
+
+// leaf 노드
 
 class RedBlackTree {
 public:
 	Node* root;
+	Node* NIL;
 
 	// 생성자
 	RedBlackTree() {
-		root = NULL;
+		NIL = new Node();
+		root = NIL;
 	}
 
 	// 검색
 	Node* search(int input_id) {
 		Node* curNode = root;
-		//int depth = -1;			// 깊이
-		while (curNode != NULL) {
-			//depth++;
+		while (curNode != NIL) {
 			// 현재 노드의 id와 찾는 id가 같을 경우
 			if (curNode->id == input_id) {
-				//cout << depth << ' ';
 				return curNode;
 			}
 			// 현재 노드의 id보다 찾는 id가 클 경우 -> 오른쪽으로 이동
@@ -106,22 +75,24 @@ public:
 	}
 
 	void insert(Node* node) {
+		node->parent = NIL;
+		node->left_child = NIL;
+		node->right_child = NIL;
+
 		// 트리가 비어있다면
-		if (root == NULL) {
+		if (root == NIL) {
 			root = node;
 
 			// 루트면 노드 색 -> black
 			node->color = BLACK;
-			//return 0;
 			return;
 		}
-		
+
+		/*
 		Node* parNode = NULL;
 		Node* curNode = root;
-		//int depth = 0;
 
-		while (curNode != NULL) {
-			//depth++;
+		while (curNode != NIL) {
 			// 새로 입력하는 id가 더 큰 경우
 			if (curNode->id < node->id) {
 				parNode = curNode;
@@ -140,6 +111,35 @@ public:
 		else if (parNode->id < node->id) {
 			parNode->setRight(node);
 		}
+		*/
+
+		Node* parent = root;
+		while (true) {
+			// 부모보다 더 크면 우측으로 이동
+			if (parent->id < node->id) {
+				// 만약 left노드라면 해당 위치에 삽입
+				if (parent->right_child == NIL) {
+					parent->right_child = node;
+					node->parent = parent;
+					break;
+				}
+				else {
+					parent = parent->right_child;
+				}
+			}
+			// 부모보다 더 작으면 좌측으로 이동
+			else {
+				// 만약 left노드라면 해당 위치에 삽입
+				if (parent->left_child == NIL) {
+					parent->left_child = node;
+					node->parent = parent;
+					break;
+				}
+				else {
+					parent = parent->left_child;
+				}
+			}
+		}
 
 		// 추가 후 double red 체크하면서 수정
 		reColoring(node);
@@ -153,19 +153,19 @@ public:
 		if (node == NULL) {
 			cout << "NULL" << '\n';
 		}
-		
+
 		// 업데이트 후 깊이 출력
 		else {
 			node->name = name;
 			node->file_size = file_size;
 			node->price = price;
-			cout<<findDepth(id)<<'\n';
+			cout << findDepth(id) << '\n';
 		}
 	}
 
 	// inorder traversal
 	void discount(Node* node, int x, int y, int p) {
-		if (node == NULL) {
+		if (node == NIL) {
 			return;
 		}
 
@@ -181,55 +181,63 @@ public:
 
 	void reColoring(Node* node) {
 		// double red 체크
-		while (node->parent != NULL && node->parent->color == RED) {
-			Node* sibling = NULL;
+		while (node->parent != NIL && node->parent->color == RED) {
+			Node* sibling = NIL;
 
+			// 부모가 조부모의 왼쪽 자식일 경우
 			if (node->parent == node->parent->parent->left_child) {
+				// 삼촌 노드
 				sibling = node->parent->parent->right_child;
 
-				// 삼촌이 RED면 recoloring -> (문제가 생기면 colorChange를 BLACK으로 직접 바꿔주자.)
-				if (sibling != NULL && sibling->color == RED) {
-					node->parent->colorChange();
-					sibling->colorChange();
-					node->parent->parent->colorChange();
+				// 삼촌이 RED면 recoloring
+				if (sibling != NIL && sibling->color == RED) {
+					node->parent->color = BLACK;
+					sibling->color = BLACK;
+					node->parent->parent->color = RED;
 					node = node->parent->parent;
 					continue;
 				}
 
-				// restructuring -> stop
+				// 삼촌이 RED가 아니라면 restructuring -> double red stop
+				// 현재 노드가 부모의 오른쪽 자식이라면
 				if (node == node->parent->right_child) {
 					node = node->parent;
 
+					// 왼쪽으로 회전
 					rotateLeft(node);
 				}
 
-				node->parent->colorChange();
-				node->parent->parent->colorChange();
+				node->parent->color = BLACK;
+				node->parent->parent->color = RED;
 
 				rotateRight(node->parent->parent);
 				break;
 			}
+			// 부모가 조부모의 오른쪽 자식일 경우
 			else {
+				// 삼촌 노드
 				sibling = node->parent->parent->left_child;
 
-				// 삼촌이 RED면 recoloring -> (문제가 생기면 colorChange를 BLACK으로 직접 바꿔주자.)
-				if (sibling != NULL && sibling->color == RED) {
-					node->parent->colorChange();
-					sibling->colorChange();
-					node->parent->parent->colorChange();
+				// 삼촌이 RED면 recoloring
+				if (sibling != NIL && sibling->color == RED) {
+					node->parent->color = BLACK;
+					sibling->color = BLACK;
+					node->parent->parent->color = RED;
 					node = node->parent->parent;
 					continue;
 				}
 
-				// restructuring -> stop
+				// 삼촌이 RED가 아니라면 restructuring -> double red stop
+				// 현재 노드가 부모의 왼쪽 자식이라면
 				if (node == node->parent->left_child) {
 					node = node->parent;
 
+					// 오른쪽으로 회전
 					rotateRight(node);
 				}
 
-				node->parent->colorChange();
-				node->parent->parent->colorChange();
+				node->parent->color = BLACK;
+				node->parent->parent->color = RED;
 
 				rotateLeft(node->parent->parent);
 				break;
@@ -240,16 +248,16 @@ public:
 	}
 
 	// 트리를 왼쪽으로 회전
+	// 오른쪽 자식의 왼쪽 자식을 부모의 오른쪽에 연결
 	void rotateLeft(Node* node) {
 		// 루트 노드라면
-		if (node->parent == NULL) {
+		if (node->parent == NIL) {
 			Node* right = root->right_child;
-			root->right_child = root->right_child->left_child;
-			right->left_child = new Node();
+			root->right_child = right->left_child;
 			right->left_child->parent = root;
 			root->parent = right;
 			right->left_child = root;
-			right->parent = NULL;
+			right->parent = NIL;
 			root = right;
 		}
 		else {
@@ -263,7 +271,7 @@ public:
 			node->right_child->parent = node->parent;
 			node->parent = node->right_child;
 
-			if (node->right_child->left_child != NULL) {
+			if (node->right_child->left_child != NIL) {
 				node->right_child->left_child->parent = node;
 			}
 
@@ -273,15 +281,16 @@ public:
 	}
 
 	// 트리를 오른쪽으로 회전
+	// 왼쪽 자식의 오른쪽 자식을 부모의 왼쪽에 연결
 	void rotateRight(Node* node) {
-		if (node->parent == NULL) {
+		// 루트 노드라면
+		if (node->parent == NIL) {
 			Node* left = root->left_child;
 			root->left_child = root->left_child->right_child;
-			left->right_child = new Node();
 			left->right_child->parent = root;
 			root->parent = left;
 			left->right_child = root;
-			left->parent = NULL;
+			left->parent = NIL;
 			root = left;
 		}
 		else {
@@ -295,7 +304,7 @@ public:
 			node->left_child->parent = node->parent;
 			node->parent = node->left_child;
 
-			if (node->left_child->right_child != NULL) {
+			if (node->left_child->right_child != NIL) {
 				node->left_child->right_child->parent = node;
 			}
 
@@ -309,7 +318,7 @@ public:
 		Node* curNode = root;
 		int depth = -1;
 
-		while (curNode != NULL) {
+		while (curNode != NIL) {
 			depth++;
 			if (curNode->id == id) {
 				return depth;
@@ -321,6 +330,7 @@ public:
 				curNode = curNode->left_child;
 			}
 		}
+		return 0;
 	}
 };
 
@@ -342,7 +352,7 @@ int main() {
 			Node* newNode = new Node(id, name, file_size, price);
 
 			Node* node = tree.search(id);
-			
+
 			// 없을 경우 추가
 			if (node == NULL) {
 				tree.insert(newNode);
